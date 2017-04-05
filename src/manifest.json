@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+
+  "name": "TFS link plugin",
+  "description": "",
+  "version": "1.0",
+  
+  "content_scripts": [
+	{
+		"matches": ["http://*:8080/tfs/*"],
+		"css": ["workitem.css"],
+		"js": ["workitem.js"]
+	}
+  ],  
+  "permissions": [
+   "activeTab"
+   ]
+}
