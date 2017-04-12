@@ -20,6 +20,7 @@ function addButtonsToContainer(container) {
 	addCopyCommitTitleButton(container);
 	addCopyLinkButton(container);
 	addCopyBranchButton(container);
+	addPullRequestButton(container);
 }
 
 function addCopyTitleButton(container) {
@@ -43,6 +44,42 @@ function addCopyLinkButton(container) {
 function addCopyBranchButton(container) {
 	addButton(container, "Branch", "Copy branch name", function() {
 		executeCopy(getBranchName());
+	});
+}
+
+function addPullRequestButton(container) {
+	addButton(container, "Pull Request", "Prepares message for PR and opens the repositories", function() {
+		
+		chrome.storage.sync.get({
+			tfs_url: 'https://tfs-server:8080/projects_collection',
+		}, function(items) {
+			var tfs_url = items.tfs_url;
+			ajax.get(tfs_url + "/_apis/wit/workitems/" + getLinkElement().href.match(/\d+$/) + "?api-version=1.0&$expand=all", {}, function(data) {
+				var response = JSON.parse(data);
+				var repos = [];
+				if (response.relations != undefined) {
+					for(i = 0; i < response.relations.length; ++i) {
+						var e = response.relations[i];
+						if (e.rel == "ArtifactLink" && e.url.startsWith("vstfs:///Git/Commit/")) {
+							var match = e.url.match(/vstfs:\/\/\/Git\/Commit\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}%2f([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/);
+							var repo = match[1];						
+							if (repos.indexOf(repo) == -1)
+								repos.push(repo);
+						}
+					}
+					for (i = 0; i < repos.length; ++i) {
+						ajax.get(tfs_url + "/_apis/git/repositories/" + repos[i] + "?api-version=1.0", {}, function(data) {
+							var response = JSON.parse(data);
+							var url = response.remoteUrl;
+							window.open(url, "_blank");
+						});
+					}				
+				}									
+			});
+		});	
+
+		var title = getLinkElement().innerText + " " + getTitleElement().innerText + "\r\n" + getLinkElement().href;
+		executeCopy(title);
 	});
 }
 
@@ -98,3 +135,62 @@ function executeCopy(text){
     document.execCommand("Copy", false, null);
     document.body.removeChild(copyDiv);
 }
+
+
+var ajax = {};
+ajax.x = function () {
+    if (typeof XMLHttpRequest !== 'undefined') {
+        return new XMLHttpRequest();
+    }
+    var versions = [
+        "MSXML2.XmlHttp.6.0",
+        "MSXML2.XmlHttp.5.0",
+        "MSXML2.XmlHttp.4.0",
+        "MSXML2.XmlHttp.3.0",
+        "MSXML2.XmlHttp.2.0",
+        "Microsoft.XmlHttp"
+    ];
+
+    var xhr;
+    for (var i = 0; i < versions.length; i++) {
+        try {
+            xhr = new ActiveXObject(versions[i]);
+            break;
+        } catch (e) {
+        }
+    }
+    return xhr;
+};
+
+ajax.send = function (url, callback, method, data, async) {
+    if (async === undefined) {
+        async = true;
+    }
+    var x = ajax.x();
+    x.open(method, url, async);
+    x.onreadystatechange = function () {
+        if (x.readyState == 4) {
+            callback(x.responseText)
+        }
+    };
+    if (method == 'POST') {
+        x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    }
+    x.send(data)
+};
+
+ajax.get = function (url, data, callback, async) {
+    var query = [];
+    for (var key in data) {
+        query.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]));
+    }
+    ajax.send(url + (query.length ? '?' + query.join('&') : ''), callback, 'GET', null, async)
+};
+
+ajax.post = function (url, data, callback, async) {
+    var query = [];
+    for (var key in data) {
+        query.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]));
+    }
+    ajax.send(url, callback, 'POST', query.join('&'), async)
+};

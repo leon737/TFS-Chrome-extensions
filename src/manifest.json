@@ -3,7 +3,7 @@
 
   "name": "TFS link plugin",
   "description": "",
-  "version": "1.0",
+  "version": "1.1",
   
   "content_scripts": [
 	{
@@ -13,6 +13,11 @@
 	}
   ],  
   "permissions": [
-   "activeTab"
-   ]
+   "activeTab",
+   "storage"
+  ],
+  "options_ui": {    
+    "page": "options.html",
+    "chrome_style": true
+  }
 }
