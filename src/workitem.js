@@ -1,21 +1,45 @@
 window.setInterval(tryInjectButtons, 1000);
 
 function tryInjectButtons() {
-	if (areButtonInjected()) return;
-	var target = document.querySelector("div.info-text-wrapper");			
+	tryInjectBoardButtons();
+	tryInjectWorkitemButtons();
+}
+
+function tryInjectButtonsToContainer(selector, check, containerSelector, injector) {
+	if (check()) return;
+	var target = document.querySelector(selector);			
 	if (target == null) return;	
 	var container = document.createElement("span");
-	container.id = getContainerId();
-	addButtonsToContainer(container);
+	container.id = containerSelector();
+	injector(container);
 	target.append(container);
 }
 
-function areButtonInjected() {
-	var target = document.getElementById(getContainerId());	
+function tryInjectBoardButtons() {
+	tryInjectButtonsToContainer("div.hub-title", areBoardButtonInjected, getBoardButtonsContainerId, addButtonsToBoardButtonsContainer);	
+}
+
+function tryInjectWorkitemButtons() {
+	tryInjectButtonsToContainer("div.info-text-wrapper", areWorkitemButtonInjected, getWorkitemButtonsContainerId, addButtonsToWorkitemButtonsContainer);	
+}
+
+function areBoardButtonInjected() {
+	var target = document.getElementById(getBoardButtonsContainerId());	
 	return target != null;
 }
 
-function addButtonsToContainer(container) {
+function areWorkitemButtonInjected() {
+	var target = document.getElementById(getWorkitemButtonsContainerId());	
+	return target != null;
+}
+
+function addButtonsToBoardButtonsContainer(container) {
+	addCollapseAllButton(container);
+	addOnlyUnassignedButton(container);
+	addOnlyAssignedToMeButton(container);
+}
+
+function addButtonsToWorkitemButtonsContainer(container) {
 	addCopyTitleButton(container);
 	addCopyCommitTitleButton(container);
 	addCopyLinkButton(container);
@@ -83,13 +107,55 @@ function addPullRequestButton(container) {
 	});
 }
 
+function addCollapseAllButton(container) {
+	addButton(container, "Collapse all", "Collapse all panes", function() {
+		collapseAllPanes();
+	});
+}
+
+function expandPane(paneTitle) {
+	var panes = document.querySelectorAll("span.witTitle>span.ellipsis");
+		for(i = 0; i < panes.length; ++i) {
+			var pane = panes[i];
+			if (pane.innerText == paneTitle) {
+				pane.click();
+			}
+		}
+}
+
+function addOnlyUnassignedButton(container) {
+	addButton(container, "Unassigned", "Collapse all panes except unassigned", function() {
+		collapseAllPanes();
+		expandPane("Unassigned");
+	});
+}
+
+function addOnlyAssignedToMeButton(container) {
+	addButton(container, "Assigned to me", "Collapse all panes except assigned to me", function() {
+		collapseAllPanes();
+		var userName = document.querySelector("ul.user-menu span.text").innerText;
+		collapseAllPanes();
+		expandPane(userName);
+	});
+}
 
 function addButton(container, title, tooltip, cb){
 	var btn = document.createElement("button");
+	btn.className = "tfs_link_button";
 	btn.innerText = title;
 	btn.title = tooltip;
 	btn.addEventListener("click", cb);
 	container.append(btn);
+}
+
+function collapseAllPanes() {
+	var panes = document.querySelectorAll('tr.taskboard-row>td.taskboard-expander>div.minimize');
+	for(i = 0; i < panes.length; ++i)
+	{
+		var pane = panes[i];
+		if (pane.parentElement.parentElement.style["display"] != "none")
+			pane.click();
+	}
 }
 
 function getLinkElement() {
@@ -100,8 +166,12 @@ function getTitleElement() {
 	return document.querySelector(".info-text-wrapper>span.info-text");
 }
 
-function getContainerId() {
-	return "tfs_plugin_buttons_container";
+function getBoardButtonsContainerId() {
+	return "tfs_plugin_board_buttons_container";
+}
+
+function getWorkitemButtonsContainerId() {
+	return "tfs_plugin_wi_buttons_container";
 }
 
 function getBranchName() {
