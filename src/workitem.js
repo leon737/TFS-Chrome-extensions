@@ -16,7 +16,7 @@ function tryInjectButtonsToContainer(selector, check, containerSelector, injecto
 }
 
 function tryInjectBoardButtons() {
-	tryInjectButtonsToContainer("div.hub-title", areBoardButtonInjected, getBoardButtonsContainerId, addButtonsToBoardButtonsContainer);	
+	tryInjectButtonsToContainer("div.hub-title h1", areBoardButtonInjected, getBoardButtonsContainerId, addButtonsToBoardButtonsContainer);	
 }
 
 function tryInjectWorkitemButtons() {
@@ -113,8 +113,18 @@ function addCollapseAllButton(container) {
 	});
 }
 
+function collapseAllPanes() {
+	var panes = document.querySelectorAll('tr.taskboard-row:not([style*="display: none"])>td.taskboard-expander>button.bowtie-toggle-tree-expanded');
+	for(i = 0; i < panes.length; ++i)
+	{
+		var pane = panes[i];
+		//if (pane.parentElement.parentElement.style["display"] != "none")
+			pane.click();
+	}
+}
+
 function expandPane(paneTitle) {
-	var panes = document.querySelectorAll("span.witTitle>span.ellipsis");
+	var panes = document.querySelectorAll("span.witTitle span.identity-picker-resolved-name");
 		for(i = 0; i < panes.length; ++i) {
 			var pane = panes[i];
 			if (pane.innerText == paneTitle) {
@@ -133,7 +143,9 @@ function addOnlyUnassignedButton(container) {
 function addOnlyAssignedToMeButton(container) {
 	addButton(container, "Assigned to me", "Collapse all panes except assigned to me", function() {
 		collapseAllPanes();
-		var userName = document.querySelector("ul.user-menu span.text").innerText;
+		var userName = document.querySelector("ul.bowtie-menus li.profile span.html").title;
+		var openBraceIndex = userName.indexOf('(');
+		userName = userName.substring(0, openBraceIndex).trim();
 		collapseAllPanes();
 		expandPane(userName);
 	});
@@ -146,16 +158,6 @@ function addButton(container, title, tooltip, cb){
 	btn.title = tooltip;
 	btn.addEventListener("click", cb);
 	container.append(btn);
-}
-
-function collapseAllPanes() {
-	var panes = document.querySelectorAll('tr.taskboard-row>td.taskboard-expander>div.minimize');
-	for(i = 0; i < panes.length; ++i)
-	{
-		var pane = panes[i];
-		if (pane.parentElement.parentElement.style["display"] != "none")
-			pane.click();
-	}
 }
 
 function getLinkElement() {

@@ -7,7 +7,7 @@
   
   "content_scripts": [
 	{
-		"matches": ["http://*:8080/tfs/*"],
+		"matches": ["http://*:8080/tfs/*/_backlogs/TaskBoard/*", "http://*:8080/tfs/*/_workitems*", "http://*:8080/tfs/*/_backlogs/taskboard/*"],
 		"css": ["workitem.css"],
 		"js": ["workitem.js"]
 	}
